@@ -1,0 +1,17 @@
+# example systemd unit file for beesly
+
+[Unit]
+Description=beesly
+Documentation=https://github.com/bincyber/beesly
+After=network.target
+
+[Service]
+User=daemon
+Group=daemon
+WorkingDirectory=/opt/beesly
+PIDFile=/var/run/gunicorn/gunicorn.pid
+EnvironmentFile=-/etc/sysconfig/beesly
+ExecStart=/usr/bin/gunicorn -c gconfig.py -w 4 -b '0.0.0.0:8000' serve:app
+
+[Install]
+WantedBy=multi-user.target

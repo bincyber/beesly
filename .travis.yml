@@ -1,0 +1,35 @@
+---
+language: python
+python: "2.7"
+notifications:
+  email: false
+addons:
+  srcclr: true
+
+before_install:
+  - sudo apt-get update -qq
+
+  # install system dependencies
+  - sudo apt-get -y --no-install-recommends install python2.7-dev build-essential libffi-dev
+
+install:
+  # install Python packages
+  - sudo make install
+
+script:
+  # create test user
+  - sudo useradd -p '$6$EeIWuA0rKjGSdc.f$.yZbGhuzpycWdK2PU.oA9cnJhrC5C68nel5TmSqMD7h9Nat1V.hRF/DIghIkUe8ryZMVqn6yLG9VvgxPNPTVy0' -M vagrant
+
+  # run unit tests
+  - export TEST_USERNAME=vagrant
+  - export TEST_PASSWORD=vagrant
+  - sudo make test
+
+  # run unit tests with coverage
+  - sudo make coverage
+
+  # run lint test
+  - make lint
+
+after_success:
+  coveralls

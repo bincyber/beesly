@@ -1,0 +1,283 @@
+---
+swagger: '2.0'
+info:
+  title: beesly
+  description: a PAM authentication microservice
+  version: "0.1.0"
+  license:
+    name: GPLv3
+    url: "https://www.gnu.org/licenses/gpl.html"
+externalDocs:
+  description: "Github - beesly"
+  url: "https://github.com/bincyber/beesly"
+host: "localhost:8000"
+schemes:
+  - http
+  - https
+produces:
+  - application/json
+tags:
+  - name: Service
+    description: "service endpoints"
+  - name: Auth
+    description: "authentication endpoint"
+  - name: JWT
+    description: "endpoints for JSON Web Token operations"
+paths:
+  /:
+    get:
+      description: |
+        Returns info about this microservice such as name, version, what endpoints are available
+        and which HTTP methods they support.
+      tags:
+        - Service
+      responses:
+        200:
+          description: successful operation
+        429:
+          description: Rate limit of 10/second exceeded
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+  /service:
+    get:
+      description: |
+        Returns info about this microservice such as name, version, and metadata about the system it is running on.
+      tags:
+        - Service
+      responses:
+        200:
+          description: successful operation
+        429:
+          description: Rate limit of 10/second exceeded
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+  /service/version:
+    get:
+      description: "Returns the name and version of this microservice."
+      tags:
+        - Service
+      responses:
+        200:
+          description: successful operation
+          schema:
+            $ref: '#/definitions/VersionResponse'
+        429:
+          description: Rate limit of 10/second exceeded
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+  /service/health:
+    get:
+      description: "Health check endpoint for load balancers and monitoring systems."
+      tags:
+        - Service
+      responses:
+        200:
+          description: service is healthy
+          schema:
+            $ref: '#/definitions/HealthResponse'
+        429:
+          description: Rate limit of 10/second exceeded
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+  /auth:
+    post:
+      description: "Authenticates a user using PAM."
+      consumes:
+        - application/json
+      tags:
+        - Auth
+        - JWT
+      parameters:
+        - in: body
+          name: body
+          description: the credentials for the user being authenticated
+          required: true
+          schema:
+            $ref: '#/definitions/Credentials'
+      responses:
+        200:
+          description: user authentication successful
+          schema:
+            $ref: '#/definitions/AuthResponse'
+        400:
+          description: |
+            One of the following:
+              - No username or password provided
+              - Invalid username provided
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        401:
+          description: user authentication failed
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        429:
+          description: Rate limit of 10/second exceeded
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+  /renew:
+    post:
+      description: "Renews a JWT that has not expired."
+      consumes:
+        - application/json
+      tags:
+        - JWT
+      parameters:
+        - in: body
+          name: body
+          description: the valid token and the username it was issued for
+          required: true
+          schema:
+            $ref: '#/definitions/Renewal'
+      responses:
+        200:
+          description: JWT successfully renewed
+          schema:
+            $ref: '#/definitions/RenewResponse'
+        400:
+          description: |
+            One of the following:
+            
+            * No JWT or username provided
+            * Invalid username provided
+            * Invalid JWT
+            * Invalid subject in JWT claim
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        401:
+          description: |
+            One of the following:
+            
+            * Invalid claims in the JWT
+            * Failed to renew invalid JWT
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        429:
+          description: Rate limit of 1/second exceeded
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        501:
+          description: JWT renewal is not enabled
+          schema:
+            $ref: '#/definitions/MessageResponse'
+  /verify:
+    post:
+      description: "Verifies if a JWT is valid."
+      consumes:
+        - application/json
+      tags:
+        - JWT
+      parameters:
+        - in: body
+          name: body
+          description: the token to be verified
+          required: true
+          schema:
+            $ref: '#/definitions/Verification'
+      responses:
+        200:
+          description: JWT successfully verified
+          schema:
+            $ref: '#/definitions/VerifyResponse'
+        400:
+          description: |
+            One of the following:
+            
+            * No JWT provided
+            * Invalid JWT
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        401:
+          description: |
+            One of the following:
+            
+            * Invalid claims in the JWT
+            * Failed to verify JWT
+          schema:
+            $ref: '#/definitions/MessageResponse'
+        429:
+          description: Rate limit of 500/second exceeded
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        501:
+          description: JWT verification is not enabled
+          schema:
+            $ref: '#/definitions/MessageResponse'
+definitions:
+  Credentials:
+    type: object
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+  Renewal:
+    type: object
+    properties:
+      username:
+        type: string
+      jwt:
+        type: string
+  Verification:
+    type: object
+    properties:
+      jwt:
+        type: string
+  MessageResponse:
+    type: object
+    properties:
+      message:
+        type: string
+  ErrorResponse:
+    type: object
+    properties:
+      error:
+        type: string
+  AuthResponse:
+    type: object
+    properties:
+      message:
+        type: string
+      auth:
+        type: boolean
+        description: "True if successful authentication, otherwise False"
+      groups:
+        type: array
+        items:
+          type: string
+        description: "a list of groups the user is a member of"
+      jwt:
+        type: string
+        description: "the JWT generated for the user, only returned if JWT_MASTER_KEY is set"
+  RenewResponse:
+    type: object
+    properties:
+      message:
+        type: string
+      jwt:
+        type: string
+        description: "the JWT regenerated for the user"
+  VerifyResponse:
+    type: object
+    properties:
+      message:
+        type: string
+      valid:
+        type: boolean
+        description: "True if the JWT is valid, otherwise False"
+  VersionResponse:
+    type: object
+    properties:
+      app:
+        type: string
+      version:
+        type: string
+    example:
+      app: "beesly"
+      version: "0.1.0"
+  HealthResponse:
+    type: object
+    properties:
+      beesly:
+        type: string
+    example:
+      beesly: "OK"

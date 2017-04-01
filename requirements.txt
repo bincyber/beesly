@@ -1,0 +1,11 @@
+Flask
+Flask-Limiter
+gunicorn
+psutil
+pymemcache
+pynacl
+python-jose
+python-pam
+redis
+requests
+statsd

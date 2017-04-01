@@ -1,0 +1,8 @@
+.git
+*.pyc
+.dockerignore
+.vagrant
+.coverage
+htmlcov/
+Vagrantfile
+README.md

@@ -1,0 +1,7 @@
+# custom PAM service for beesly
+# this will only authenticate directory users via SSSD and does not require superuser privileges
+
+auth    required      pam_env.so
+auth    requisite     pam_succeed_if.so uid > 1000 quiet
+auth    sufficient    pam_sss.so quiet
+auth    required      pam_deny.so
