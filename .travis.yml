@@ -9,7 +9,7 @@ addons:
 before_install:
   - sudo apt-get update -qq
 
-  # install system dependencies
+  # install system dependencies for Python packages
   - sudo apt-get -y --no-install-recommends install python2.7-dev build-essential libffi-dev
 
 install:
@@ -17,7 +17,7 @@ install:
   - sudo make install
 
 script:
-  # create test user
+  # create test user for unit tests
   - sudo useradd -p '$6$EeIWuA0rKjGSdc.f$.yZbGhuzpycWdK2PU.oA9cnJhrC5C68nel5TmSqMD7h9Nat1V.hRF/DIghIkUe8ryZMVqn6yLG9VvgxPNPTVy0' -M vagrant
 
   # run unit tests
@@ -25,7 +25,7 @@ script:
   - export TEST_PASSWORD=vagrant
   - sudo make test
 
-  # run unit tests with coverage
+  # run unit tests with coverage for coveralls.io
   - sudo make coverage
 
   # run lint test
