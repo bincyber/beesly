@@ -85,7 +85,7 @@ Note: a JWT is returned only when `JWT_MASTER_KEY` is configured.
 
 Renewing an existing JWT that has not expired:
 
-    $ curl -X POST http://127.0.0.1:8000/auth -d '{"username":"dwight.schrute@dundermifflin.com","jwt":"2NzUuMjEyMzAyLCJncm91cHMiOm51bGwsInN1Yi..."}'
+    $ curl -X POST http://127.0.0.1:8000/renew -d '{"username":"dwight.schrute@dundermifflin.com","jwt":"2NzUuMjEyMzAyLCJncm91cHMiOm51bGwsInN1Yi..."}'
 
     {
       "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiZWvR...", 
@@ -95,7 +95,7 @@ Renewing an existing JWT that has not expired:
 
 Verifying the validity of a JWT:
 
-    $ curl -X POST http://127.0.0.1:8000/auth -d '{"jwt":"2NzUuMjEyMzAyLCJncm91cHMiOm51bGwsInN1Yi..."}'
+    $ curl -X POST http://127.0.0.1:8000/verify -d '{"jwt":"2NzUuMjEyMzAyLCJncm91cHMiOm51bGwsInN1Yi..."}'
 
     {
       "message": "JWT successfully verified", 
