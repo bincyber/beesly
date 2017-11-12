@@ -89,5 +89,6 @@ def get_group_membership(username):
     """
     exe = find_executable('id')
     p = subprocess.Popen([exe, '-Gn', username], stdout=subprocess.PIPE)
-    groups = p.stdout.read().split().remove(username)
+    groups = p.stdout.read().split()
+    groups.remove(username)
     return groups
