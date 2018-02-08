@@ -30,10 +30,10 @@ def structured_log(level, msg, **kwargs):
     level = level.upper()
     log_body = msg
     if kwargs:
-        kv_pairs = ', '.join(['%s=%s' % (k, v) for (k, v) in sorted(kwargs.items())])
-        log_body += ', %s' % kv_pairs
+        kv_pairs = ', '.join([f'{k}={v}' for (k, v) in sorted(kwargs.items())])
+        log_body += f', {kv_pairs}'
 
-    app_logger_name = __app__ + '.logger'
+    app_logger_name = f"{__app__}.logger"
     app_logger_func = logging.getLogger(app_logger_name)
 
     app_logger = {

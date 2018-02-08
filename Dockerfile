@@ -1,21 +1,21 @@
-# builds a 199 MB Docker container image
+# builds a 185 MB Docker container image
 # https://docs.docker.com/engine/reference/builder/
 #
 # docker build -t beesly:latest .
 
-FROM python:2.7-slim
+FROM python:3.6-slim
 
-LABEL app="beesly"
-LABEL version="0.1.0"
-LABEL maintainer="@bincyber"
+LABEL URL="http://github.com/bincyber/beesly"
+LABEL APP="beesly"
+LABEL VERSION="0.2.0"
+LABEL MAINTAINER="@bincyber"
 
 COPY ./requirements.txt /tmp/requirements.txt
 
-RUN apt-get update -qq \
-    && apt-get -y --no-install-recommends install \ 
-        python2.7-dev build-essential libffi-dev \
+RUN set -ex && apt-get update -qq \
+    && apt-get -y --no-install-recommends install build-essential libffi-dev \
     && pip install -r /tmp/requirements.txt --no-cache-dir --disable-pip-version-check \
-    && apt-get purge -y --auto-remove build-essential python-pip python2.7-dev libffi-dev \
+    && apt-get purge -y --auto-remove build-essential libffi-dev \
     && apt-get -y autoremove \
     && rm -rf /var/lib/apt/lists/* \
     && rm -f /var/log/dpkg.log \

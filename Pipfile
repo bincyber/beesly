@@ -1,0 +1,37 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+Flask = "*"
+Flask-Limiter = "*"
+gunicorn = "*"
+psutil = "*"
+pymemcache = "*"
+PyNaCl = "*"
+python-jose = "*"
+python-pam = "*"
+redis = "*"
+requests = "*"
+statsd = "*"
+
+
+[dev-packages]
+
+bandit = "*"
+coveralls = "*"
+docker-compose = "*"
+"flake8" = "*"
+ipython = "*"
+logging_tree = "*"
+"nose2" = "*"
+"nose2-cov" = "*"
+
+
+[requires]
+
+python_version = "3.6"

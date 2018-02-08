@@ -6,8 +6,8 @@ from flask import Flask, request, jsonify, escape
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from pam import pam
-from jose import jwt
-from nacl.encoding import Base16Encoder, URLSafeBase64Encoder
+from jose import jwt, JWTError
+from nacl.encoding import URLSafeBase64Encoder
 from nacl.hash import blake2b
 import nacl.utils
 import psutil
@@ -56,7 +56,7 @@ def service_info():
     and metadata about the server it is running on.
     """
 
-    total_memory_mb = "%d MB" % (psutil.virtual_memory().total / (1024 * 1024))
+    total_memory_mb = "{} MB".format(psutil.virtual_memory().total / (1024 * 1024))
     system_uptime = round((time.time() - psutil.boot_time()), 3)
     app_uptime = round((time.time() - psutil.Process().create_time()), 3)
 
@@ -76,7 +76,7 @@ def service_info():
 
     try:
         response_body["aws"] = get_ec2_metadata()
-    except:
+    except Exception:
         pass
 
     return jsonify(response_body), 200
@@ -131,7 +131,7 @@ def auth_endpoint():
         sanitized_username = str(escape(username))
 
         if not validate_username(sanitized_username):
-            structured_log(level='warning', msg="Invalid username provided", user="'%s'" % sanitized_username)
+            structured_log(level='warning', msg="Invalid username provided", user=f"'{sanitized_username}'")
             return jsonify(message="Invalid username provided"), 400
 
         pam_service = app.config['PAM_SERVICE']
@@ -146,10 +146,10 @@ def auth_endpoint():
                 auth_message = "Authentication failed"
                 statsd.client.incr("auth_failed")
 
-        structured_log(level='info', msg=auth_message, user="'%s'" % sanitized_username)
+        structured_log(level='info', msg=auth_message, user=f"'{sanitized_username}'")
 
         if authenticated:
-            groups = get_group_membership(username)
+            groups = get_group_membership(sanitized_username)
 
             token = None
 
@@ -157,7 +157,7 @@ def auth_endpoint():
                 issuer      = app.config['APP_NAME']
                 issue_time  = time.time()
                 expiry_time = issue_time + app.config['JWT_VALIDITY_PERIOD']
-                subject     = sanitized_username
+                subject     = sanitized_username.encode('utf-8')
 
                 # generate a unique salt for each JWT, needs to be encoded to include as a claim
                 salt = URLSafeBase64Encoder.encode(nacl.utils.random(12))
@@ -166,23 +166,23 @@ def auth_endpoint():
                     "iss": issuer,
                     "iat": issue_time,
                     "exp": expiry_time,
-                    "sub": subject,
+                    "sub": sanitized_username,
                     "groups": groups,
-                    "x": salt
+                    "x": salt.decode('utf-8')
                 }
 
                 master_key  = app.config["JWT_MASTER_KEY"]
                 algorithm   = app.config["JWT_ALGORITHM"]
 
                 # generate a unique secret key for each JWT
-                secret_key  = blake2b(b'', key=master_key, salt=salt, person=subject, encoder=Base16Encoder)
+                secret_key = blake2b(b'', key=master_key, salt=salt, person=subject).decode('utf-8')
 
                 token = jwt.encode(claims=claims, key=secret_key, algorithm=algorithm)
                 statsd.client.incr("jwt_generated")
 
-            return jsonify(message="Authentication successful", auth=True, groups=groups, jwt=token), 200
+            return jsonify(message=f"{auth_message}", auth=True, groups=groups, jwt=token), 200
         else:
-            return jsonify(message="Authentication failed", auth=False), 401
+            return jsonify(message=f"{auth_message}", auth=False), 401
 
 
 @app.route("/renew", methods=["POST"])
@@ -207,17 +207,17 @@ def renew_endpoint():
         sanitized_username = str(escape(username))
 
         if not validate_username(sanitized_username):
-            structured_log(level='warning', msg="Invalid username provided", user="'%s'" % sanitized_username)
+            structured_log(level='warning', msg="Invalid username provided", user=f"'{sanitized_username}'")
             return jsonify(message="Invalid username provided"), 400
 
         try:
             claims = jwt.get_unverified_claims(token)
-        except:
+        except JWTError:
             return jsonify(message="Invalid JWT"), 400
 
         try:
-            subject = str(claims["sub"])
-            salt    = str(claims["x"])
+            subject = claims["sub"].encode('utf-8')
+            salt    = claims["x"].encode('utf-8')
         except KeyError:
             return jsonify(message="Invalid claims in JWT"), 401
 
@@ -228,28 +228,31 @@ def renew_endpoint():
         algorithm   = app.config["JWT_ALGORITHM"]
         issuer      = app.config['APP_NAME']
 
-        secret_key = blake2b(b'', key=master_key, salt=salt, person=subject, encoder=Base16Encoder)
+        # jwt.decode() requires secret_key to be a str, so it must be decoded
+        secret_key = blake2b(b'', key=master_key, salt=salt, person=subject).decode('utf-8')
 
         # exception is raised if token has expired, signature verification fails, etc.
         try:
             payload = jwt.decode(token=token, key=secret_key, algorithms=algorithm, issuer=issuer)
         except Exception as err:
-            structured_log(level='info', msg="Failed to renew JWT", error=err.message)
+            structured_log(level='info', msg="Failed to renew JWT", error=err)
             return jsonify(message="Failed to renew invalid JWT"), 401
 
         issue_time  = time.time()
         expiry_time = issue_time + app.config['JWT_VALIDITY_PERIOD']
 
-        payload["iat"] = issue_time
-        payload["exp"] = expiry_time
+        salt = URLSafeBase64Encoder.encode(nacl.utils.random(12))
+
+        payload['iat']  = issue_time
+        payload['exp']  = expiry_time
+        payload['x']    = salt.decode('utf-8')
 
         # compute a new secret key for the regenerated JWT
-        salt        = URLSafeBase64Encoder.encode(nacl.utils.random(12))
-        secret_key  = blake2b(b'', key=master_key, salt=salt, person=subject, encoder=Base16Encoder)
-        new_token   = jwt.encode(claims=payload, key=secret_key, algorithm=algorithm)
+        new_secret_key  = blake2b(b'', key=master_key, salt=salt, person=subject).decode('utf-8')
+        new_token       = jwt.encode(claims=payload, key=new_secret_key, algorithm=algorithm)
 
         statsd.client.incr("jwt_renewed")
-        structured_log(level='info', msg="JWT successfully renewed", user="'%s'" % sanitized_username)
+        structured_log(level='info', msg="JWT successfully renewed", user="'{}'".format(sanitized_username))
         return jsonify(message="JWT successfully renewed", jwt=new_token), 200
 
 
@@ -278,25 +281,26 @@ def verify_endpoint():
 
         master_key  = app.config["JWT_MASTER_KEY"]
         algorithm   = app.config["JWT_ALGORITHM"]
-        iss         = app.config['APP_NAME']
+        issuer      = app.config['APP_NAME']
 
         try:
-            subject = str(claims["sub"])
-            salt    = str(claims["x"])
+            subject = claims["sub"].encode('utf-8')
+            salt    = claims["x"].encode('utf-8')
         except KeyError:
             return jsonify(message="Invalid claims in JWT", valid=False), 401
 
-        secret_key = blake2b(b'', key=master_key, salt=salt, person=subject, encoder=Base16Encoder)
+        # jwt.decode() requires secret_key to be a str, so it must be decoded
+        secret_key = blake2b(b'', key=master_key, salt=salt, person=subject).decode('utf-8')
 
         # exception is raised if token has expired, signature verification fails, etc.
         try:
-            jwt.decode(token=token, key=secret_key, algorithms=algorithm, issuer=iss)
+            jwt.decode(token=token, key=secret_key, algorithms=algorithm, issuer=issuer)
         except Exception as err:
-            structured_log(level='info', msg="Failed to verify JWT", error=err.message)
+            structured_log(level='info', msg="Failed to verify JWT", error=err)
             return jsonify(message="Failed to verify JWT", valid=False), 401
 
         statsd.client.incr("jwt_verified")
-        structured_log(level='info', msg="JWT successfully verified", user="'%s'" % subject)
+        structured_log(level='info', msg="JWT successfully verified", user=f"'{subject}'")
         return jsonify(message="JWT successfully verified", valid=True), 200
 
 
@@ -346,7 +350,7 @@ def rate_limit_handler(err):
     """
     Custom error message returned when rate limits are exceeded.
     """
-    return jsonify(error="Rate limit exceeded %s" % err.description), 429
+    return jsonify(error=f"Rate limit exceeded {err.description}"), 429
 
 
 @app.errorhandler(Exception)

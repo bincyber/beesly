@@ -1,8 +1,12 @@
-.git
+.git/
 *.pyc
 .dockerignore
-.vagrant
+.vagrant/
 .coverage
 htmlcov/
 Vagrantfile
+Makefile
+Pipfile
+Pipfile.lock
 README.md
+CREDITS.md

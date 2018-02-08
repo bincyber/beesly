@@ -2,7 +2,7 @@ import sys
 import os.path
 
 from beesly._logging import structured_log
-from beesly.config import initialize_config
+from beesly.config import ConfigError, initialize_config
 from beesly.views import app, rlimiter
 
 
@@ -15,7 +15,7 @@ def create_app():
 
     try:
         settings = initialize_config()
-    except:
+    except ConfigError:
         structured_log(level='critical', msg="Failed to load configuration. Exiting...")
         sys.exit(4)
 

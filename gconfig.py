@@ -11,7 +11,7 @@ sys.path.insert(0, app_path)
 
 from beesly.version import __app__
 
-app_logger = '%s.logger' % __app__
+app_logger = f'{__app__}.logger'
 
 LOGGING = {
     'version': 1,
@@ -64,5 +64,4 @@ def on_starting(server):
     # remove gunicorn's stream handler to prevent duplicate logs
     gunicornLogger = logging.getLogger('gunicorn.error')
     gunicornLogger.handlers.pop(1)
-
     return

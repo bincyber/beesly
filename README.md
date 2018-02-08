@@ -1,8 +1,8 @@
 # beesly
 
-[![Python](https://img.shields.io/badge/Python-2.7-yellow.svg)](#)
+[![Python](https://img.shields.io/badge/Python-3.6-yellow.svg)](#)
 [![GPLv3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl.html)
-[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](#)
+[![Version](https://img.shields.io/badge/version-0.2.0-green.svg)](#)
 [![Build Status](https://travis-ci.org/bincyber/beesly.svg?branch=master)](https://travis-ci.org/bincyber/beesly)
 [![Coverage Status](https://coveralls.io/repos/github/bincyber/beesly/badge.svg?branch=master)](https://coveralls.io/github/bincyber/beesly?branch=master)
 
@@ -11,7 +11,7 @@ beesly is a microservice for authenticating users with PAM.
 
 It provides an alternative method for authenticating and authorizing users' access to internal applications and services. Support for custom PAM services facilitates the reuse of existing integrations (SSSD) with directory servers (Active Directory, IdM, FreeIPA, OpenLDAP, etc.) and third party services (Duo Security). Group membership is returned for authenticated users allowing the addition of Role-Based Access Control for custom applications and services without the need to learn the intricacies of LDAP or Kerberos.
 
-beesly was developed in Python using the Flask microframework.
+beesly was developed in Python 3.6 using the Flask microframework.
 
 
 ### Features
@@ -25,18 +25,13 @@ beesly was developed in Python using the Flask microframework.
 
 ## Prerequisites
 
+[Pipenv](https://docs.pipenv.org/) is used to manage dependencies.
+
 beesly requires superuser privileges to authenticate users when running in its default configuration because it uses the PAM login service which uses the `pam_unix.so` PAM module. This module adds a 2 second delay for failed authentications which can be disabled by using the nodelay option. It's encouraged to use a custom PAM service that does not use this module.
 
 If using a custom PAM service, the configuration file should be placed in `/etc/pam.d` with `0644` permissions. See `examples/beesly.pam` for an example of a custom PAM service that uses SSSD and does not require superuser privileges.
 
-The following packages are required to install Python dependencies in `requirements.txt`:
-
-* python-devel
-* libffi-devel
-* gcc
-
-[Flask-Limiter](https://flask-limiter.readthedocs.io/en/stable/) is used to implement rate limits. It can use in-memory , Redis, or Memcached as a storage backend.
-
+[Flask-Limiter](https://flask-limiter.readthedocs.io/en/stable/) is used to implement rate limits. It can use in-memory, Redis, or Memcached as a storage backend.
 
 ## Usage
 
@@ -57,8 +52,8 @@ Authenticating a user:
       "groups": [
         "Sales",
         "Assistant_Regional_Managers"
-      ], 
-      "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiZWVz...", 
+      ],
+      "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiZWVz...",
       "message": "Authentication successful"
     }
 
@@ -88,7 +83,7 @@ Renewing an existing JWT that has not expired:
     $ curl -X POST http://127.0.0.1:8000/renew -d '{"username":"dwight.schrute@dundermifflin.com","jwt":"2NzUuMjEyMzAyLCJncm91cHMiOm51bGwsInN1Yi..."}'
 
     {
-      "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiZWvR...", 
+      "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiZWvR...",
       "message": "JWT successfully renewed"
     }
 
@@ -98,7 +93,7 @@ Verifying the validity of a JWT:
     $ curl -X POST http://127.0.0.1:8000/verify -d '{"jwt":"2NzUuMjEyMzAyLCJncm91cHMiOm51bGwsInN1Yi..."}'
 
     {
-      "message": "JWT successfully verified", 
+      "message": "JWT successfully verified",
       "valid": true
     }
 
@@ -155,7 +150,7 @@ The following environment variables are used to modify the running configuration
 | -------- | -------- | -------- | -------- | --------
 | DEV | Boolean | No | False | Set to True to enable debug logging and Swagger UI.
 | PAM_SERVICE | String | No | login | The name of the PAM service to authenticate users with.
-| JWT_MASTER_KEY | String | No | | The master key to use when generating JSON Web Tokens.<br />Must be at least 10 characters long.
+| JWT_MASTER_KEY | String | No | | The master key to use when generating JSON Web Tokens.<br />Must be between 10 - 64 characters in length.
 | JWT_ALGORITHM | String | No | HS256 | The HMAC algorithm to use when generating JWTs.<br /> One of: <br />* `HS256` <br />* `HS384` <br />* `HS512`
 | JWT_VALIDITY_PERIOD | Interger | No | 900 | The validity period in seconds for generated JWTs.
 | STATSD_HOST | String | No | localhost | The hostname or IP address of the statsd collector.
@@ -182,7 +177,7 @@ Create a custom PAM service:
     auth    sufficient    pam_unix.so nodelay
     auth    required      pam_deny.so
 
-Configure duo_unix to send push notifications to the user's phone:
+Configure `duo_unix` to send push notifications to the user's phone:
 
     $ sudo vim /etc/duo/pam_duo.conf
 
@@ -202,14 +197,14 @@ Users will have to acknowledge the push notification for authentication to succe
 
 ### JSON Web Tokens
 
-beesly can optionally return short-lived JSON Web Tokens upon successful user authentication. To add JWT support, a secret master key must be set via the `JWT_MASTER_KEY` environment variable. This master key should be strong and at least 10 characters in length.
+beesly can optionally return short-lived JSON Web Tokens upon successful user authentication. To add JWT support, a secret master key must be set via the `JWT_MASTER_KEY` environment variable. It must be between 10 - 64 characters in length.
 
 blake2b key derivation function from [pynacl](https://pynacl.readthedocs.io/en/latest/hashing/#key-derivation) is used to create a unique signing key for each generated token:
 
-    master_key = app.config["JWT_MASTER_KEY"]    
+    master_key = app.config["JWT_MASTER_KEY"]
     unique_salt = nacl.encoding.URLSafeBase64Encoder.encode(nacl.utils.random(12))
 
-    signing_key = blake2b(b'', key=master_key, salt=unique_salt, person=username, encoder=nacl.encoding.Base16Encoder)
+    signing_key = blake2b(b'', key=master_key, salt=unique_salt, person=username)
 
 By default, each JWT is valid for 15 minutes. JWTs can be renewed by sending a POST request to `/renew` with the payload containing the username and their valid token. JWTs can be verified by sending a POST request to `/verify` with the payload containing the token.
 

@@ -3,7 +3,7 @@ swagger: '2.0'
 info:
   title: beesly
   description: a PAM authentication microservice
-  version: "0.1.0"
+  version: "0.2.0"
   license:
     name: GPLv3
     url: "https://www.gnu.org/licenses/gpl.html"

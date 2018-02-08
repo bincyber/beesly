@@ -1,6 +1,6 @@
 from distutils.spawn import find_executable
 from distutils.util import strtobool
-from urlparse import urlparse
+from urllib.parse import urlparse
 import os
 import os.path
 import socket
@@ -57,10 +57,7 @@ class StatsdConfig(object):
 
         self.client = StatsClient(host=self.host, port=self.port, prefix=self.prefix)
 
-        structured_log(
-            level='info',
-            msg="Statsd client configured to export metrics to %s:%s" % (self.host, self.port)
-        )
+        structured_log(level='info', msg=f"Statsd client configured to export metrics to {self.host}:{self.port}")
 
 
 def initialize_config():
@@ -111,9 +108,9 @@ def initialize_config():
     # python-pam module allows specfiying which PAM service by name to authenticate against
     settings['PAM_SERVICE'] = os.environ.get("PAM_SERVICE", 'login')
 
-    pam_file = '/etc/pam.d/' + settings['PAM_SERVICE']
+    pam_file = f"/etc/pam.d/{settings['PAM_SERVICE']}"
     if not os.path.exists(pam_file):
-        structured_log(level='error', msg="Invalid value provided for PAM_SERVICE. The pam configuration file '%s' does not exist" % pam_file)
+        structured_log(level='error', msg=f"Invalid value provided for PAM_SERVICE. The pam configuration file '{pam_file}' does not exist")
         raise ConfigError()
 
     # configure JWT, by default it's disabled
@@ -128,8 +125,8 @@ def initialize_config():
         settings["JWT_VALIDITY_PERIOD"] = 900
 
     if settings["JWT_MASTER_KEY"] is not None:
-        if len(settings["JWT_MASTER_KEY"]) < 10:
-            structured_log(level='error', msg="Invalid value provided for JWT_MASTER_KEY. Must be at least 10 characters long")
+        if len(settings["JWT_MASTER_KEY"]) < 10 or len(settings["JWT_MASTER_KEY"]) > 64:
+            structured_log(level='error', msg="Invalid value provided for JWT_MASTER_KEY. Must be between 10 - 64 characters")
             raise ConfigError()
 
         if settings["JWT_ALGORITHM"] not in ['HS256', 'HS384', 'HS512']:
@@ -137,5 +134,6 @@ def initialize_config():
             settings["JWT_ALGORITHM"] = 'HS256'
 
         settings["JWT"] = True
+        settings["JWT_MASTER_KEY"] = bytes(settings["JWT_MASTER_KEY"], encoding='utf-8')
 
     return settings
