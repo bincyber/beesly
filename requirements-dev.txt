@@ -1,8 +1,0 @@
--r requirements.txt
-bandit
-coveralls
-docker-compose
-logging_tree
-flake8
-nose2
-nose2-cov

@@ -1,20 +1,15 @@
 ---
 language: python
-python: "2.7"
+python: "3.6"
 notifications:
   email: false
 addons:
   srcclr: true
 
-before_install:
-  - sudo apt-get update -qq
-
-  # install system dependencies for Python packages
-  - sudo apt-get -y --no-install-recommends install python2.7-dev build-essential libffi-dev
-
 install:
   # install Python packages
-  - sudo make install
+  - sudo pip install flake8 coveralls
+  - sudo pip install -r requirements.txt
 
 script:
   # create test user for unit tests

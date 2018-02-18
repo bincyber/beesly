@@ -56,7 +56,7 @@ def get_request_ip_username():
     if request_json is not None:
         rlimiting_key += request_json.get('username', 'None')
 
-    return sha256(rlimiting_key).hexdigest()
+    return sha256(rlimiting_key.encode('utf-8')).hexdigest()
 
 
 def validate_username(username):
@@ -69,7 +69,7 @@ def validate_username(username):
     username : string
       the username to check
     """
-    regex = r'^[a-zA-Z0-9_\-\.@]{1,32}$'
+    regex = '^[a-zA-Z][-_.@a-z0-9]{1,32}$'
     if not re.match(regex, username):
         return False
     else:
@@ -88,7 +88,7 @@ def get_group_membership(username):
       the username to get group membership for
     """
     exe = find_executable('id')
-    p = subprocess.Popen([exe, '-Gn', username], stdout=subprocess.PIPE)
-    groups = p.stdout.read().split()
+    process = subprocess.run([exe, '-Gn', username], stdout=subprocess.PIPE)
+    groups = [group.decode('utf-8') for group in process.stdout.split()]
     groups.remove(username)
     return groups

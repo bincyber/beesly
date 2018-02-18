@@ -1,6 +1,6 @@
 # CREDITS
 
-beesly is made possibly using the following open source software:
+beesly could not exist without the following excellent open source software:
 
 * [Flask](http://flask.pocoo.org/)
 * [Flask-Limiter](http://flask-limiter.readthedocs.io/en/stable/)
