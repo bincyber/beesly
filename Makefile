@@ -1,5 +1,5 @@
 VERSION=$(shell grep version beesly/version.py | cut -f2 -d '=' | xargs | tr -d '"')
-WORKERS=2
+WORKERS=4
 PORT=8000
 
 install:
@@ -24,7 +24,7 @@ clean:
 	coverage erase && rm -rf htmlcov
 
 run:
-	pipenv run gunicorn -c gconfig.py -w $(WORKERS) -b '0.0.0.0:$(PORT)' serve:app
+	pipenv run gunicorn -c gconfig.py --preload -w $(WORKERS) -b '0.0.0.0:$(PORT)' serve:app
 
 run-container:
-	docker run -d -p $(PORT) beesly:latest
+	docker run -d -p $(PORT):$(PORT) beesly:$(VERSION)

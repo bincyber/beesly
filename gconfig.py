@@ -18,7 +18,7 @@ LOGGING = {
     'disable_existing_loggers': True,
     'formatters': {
         'key_value_format': {
-            'format': 'timestamp=%(asctime)s.%(msecs).03d, loglevel=%(levelname)s, app=%(app)s, pid=%(process)d, msg=%(message)s',
+            'format': '{"timestamp":"%(asctime)s.%(msecs).03d","loglevel":"%(levelname)s","app":"%(app)s","pid":"%(process)d","message":"%(message)s"}',
             'datefmt': '%Y-%m-%d %H:%M:%S'
         },
     },

@@ -1,14 +1,13 @@
-# builds a 185 MB Docker container image
+# builds a Docker container image
 # https://docs.docker.com/engine/reference/builder/
 #
 # docker build -t beesly:latest .
 
 FROM python:3.6-slim
 
-LABEL URL="http://github.com/bincyber/beesly"
 LABEL APP="beesly"
-LABEL VERSION="0.2.0"
 LABEL MAINTAINER="@bincyber"
+LABEL URL="http://github.com/bincyber/beesly"
 
 COPY ./requirements.txt /tmp/requirements.txt
 
@@ -31,4 +30,4 @@ USER nobody
 
 EXPOSE 8000
 
-ENTRYPOINT ["/usr/local/bin/gunicorn", "-c", "gconfig.py", "-w", "4", "-b", "0.0.0.0:8000", "serve:app"]
+ENTRYPOINT ["/usr/local/bin/gunicorn", "-c", "gconfig.py", "--preload", "-w", "4", "-b", "0.0.0.0:8000", "serve:app"]
