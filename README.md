@@ -37,7 +37,7 @@ If using a custom PAM service, the configuration file should be placed in `/etc/
 
 Run beesly using gunicorn:
 
-    $ gunicorn -c gconfig.py -b '127.0.0.1:8000' -w 4 serve:app
+    $ gunicorn -c gconfig.py --preload -b '127.0.0.1:8000' -w 4 serve:app
 
 For production deployment, run gunicorn behind nginx and use TLS.
 
@@ -51,7 +51,8 @@ Authenticating a user:
       "auth": true,
       "groups": [
         "Sales",
-        "Assistant_Regional_Managers"
+        "Assistant_Regional_Manager",
+        "Assistant_to_the_Regional_Manager"
       ],
       "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJiZWVz...",
       "message": "Authentication successful"
@@ -67,7 +68,8 @@ The payload of the generated JWT contains the following claims:
       'exp': 1489344336.296496,
       'groups': [
         "Sales",
-        "Assistant_Regional_Managers"
+        "Assistant_Regional_Manager",
+        "Assistant_to_the_Regional_Manager"
       ],
       'iat': 1489343436.296496,
       'iss': 'beesly',
